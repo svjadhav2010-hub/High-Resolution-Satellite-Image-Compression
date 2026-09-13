@@ -51,6 +51,8 @@ def parse_args():
     p.add_argument("--ssim_weight", type=float, default=0.0)
     p.add_argument("--accum_steps", type=int, default=8)
     p.add_argument("--limit", type=int, default=None, help="Cap dataset size (debugging).")
+    p.add_argument("--log_every", type=int, default=20,
+                    help="Print a running-average log line every N images (0 to disable).")
     p.add_argument("--out_dir", type=str, default="checkpoints")
     p.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     return p.parse_args()
@@ -90,11 +92,17 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     history = []
 
+    print(f"[train] dataset size: {len(dataset)} images "
+          f"({'no --limit set: this can be slow on the full EuroSAT set (~27k images); '
+             'pass --limit 100 or so for a first sanity run' if args.limit is None else 'limited'})")
+
     for epoch in range(args.epochs):
         model.train()
         optimizer.zero_grad()
         running = {"loss": 0.0, "distortion": 0.0, "bpp": 0.0}
         n_seen = 0
+        import time
+        epoch_start = time.time()
 
         for step, image_np in enumerate(loader):
             out = model(image_np)
@@ -116,6 +124,15 @@ def main():
             for k in running:
                 running[k] += logs[k]
             n_seen += 1
+
+            if args.log_every and (step + 1) % args.log_every == 0:
+                elapsed = time.time() - epoch_start
+                rate = n_seen / elapsed
+                remaining = len(dataset) - n_seen
+                eta_min = (remaining / rate) / 60 if rate > 0 else float("nan")
+                print(f"  [epoch {epoch}] {n_seen}/{len(dataset)} images "
+                      f"({rate:.1f} img/s, ~{eta_min:.1f} min left this epoch) "
+                      f"loss={running['loss']/n_seen:.4f}")
 
         avg = {k: v / max(n_seen, 1) for k, v in running.items()}
         history.append({"epoch": epoch, **avg})

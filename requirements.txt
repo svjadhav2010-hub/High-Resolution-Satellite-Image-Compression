@@ -1,0 +1,12 @@
+# Core
+torch>=2.1          # Colab/Kaggle ship this preinstalled with CUDA; no need to reinstall there
+numpy>=1.24
+Pillow>=10.0
+opencv-python-headless>=4.8
+scikit-image>=0.22
+
+# Entropy coding
+constriction>=0.4    # real rANS backend; pure-Python fallback used automatically if absent
+
+# Dev / testing
+pytest>=8.0

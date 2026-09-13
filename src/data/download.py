@@ -14,9 +14,20 @@ DATA_ROOT = "uc_merced/UCMerced_LandUse/Images"
 
 EUROSAT_COLAB_SNIPPET = '''
 # EuroSAT (27000 images, 10 classes, 64x64, RGB "RGB" release)
-!wget -q https://madm.dfki.de/files/sentinel/EuroSAT.zip
-!unzip -q EuroSAT.zip -d eurosat
-DATA_ROOT = "eurosat/2750"
+#
+# PREFERRED: use torchvision's built-in downloader. It pulls from a
+# Hugging Face mirror rather than the original madm.dfki.de host, which is
+# frequently slow or stalls entirely from Colab/Kaggle IPs (this was hit
+# and confirmed during development -- the wget below can hang for
+# several minutes with no progress).
+import torchvision
+torchvision.datasets.EuroSAT(root='.', download=True)
+DATA_ROOT = './eurosat/2750'
+
+# FALLBACK (only if the above fails): the original direct-download host.
+# !wget -q https://madm.dfki.de/files/sentinel/EuroSAT.zip
+# !unzip -q EuroSAT.zip -d eurosat
+# DATA_ROOT = "eurosat/2750"
 '''
 
 KAGGLE_ALTERNATIVE_SNIPPET = '''
